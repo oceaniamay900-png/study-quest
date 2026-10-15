@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Quest</title>
+<link rel="stylesheet" href="style.css?v=8">
+</head>
+<body>
+<header class="topbar">
+  <h1>⚡ Study Quest</h1>
+  <nav>
+    <button id="btnHome" class="ghost">Home</button>
+    <button id="btnWorld" class="ghost">🌍 World</button>
+    <button id="btnDex" class="ghost">Studydex</button>
+    <button id="btnHelp" class="ghost" title="How to play">❓ Help</button>
+    <button id="btnMute" class="ghost" title="Toggle sound">🔊</button>
+  </nav>
+</header>
+
+<main>
+  <!-- STARTER PICK -->
+  <section id="screen-starter" class="screen">
+    <h2>Choose your study partner!</h2>
+    <p class="sub">It will grow and evolve as you learn.</p>
+    <div id="starterRow" class="row"></div>
+  </section>
+
+  <!-- HOME -->
+  <section id="screen-home" class="screen">
+    <div class="card partner">
+      <div id="partnerSprite" class="sprite small"></div>
+      <div class="grow">
+        <div><strong id="partnerName"></strong> <span id="partnerLv" class="pill"></span></div>
+        <div class="bar"><div id="xpBar"></div></div>
+        <div id="partnerInfo" class="sub"></div>
+        <button id="changePartner" class="ghost small" title="Pick any creature you have caught">🔄 Change partner</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>1. Add your study material</h3>
+      <div id="drop" class="drop">
+        <p><strong>Drop files here</strong> or</p>
+        <label class="btn">Choose files
+          <input id="fileInput" type="file" multiple accept=".txt,.md,.csv,.tsv,.json,.pdf,text/*,application/pdf" hidden>
+        </label>
+        <p class="sub">.pdf .txt .md .csv .tsv .json &nbsp;·&nbsp; one deck per file</p>
+        <p id="status" class="sub"></p>
+      </div>
+      <div class="aigen">
+        <label class="chk"><input type="checkbox" id="aiGenOn"> ✨ Let the AI write the questions when I add a file</label>
+        <div id="aiGenOpts" class="hidden">
+          <label>AI size <select id="genModel"></select></label>
+          <p class="small">Runs on your device, so it is slower than the basic method (a minute or two for a few pages). You can press Stop and the rest uses basic questions. Lines like <code>term: meaning</code> and <code>Q:/A:</code> are still used exactly as written.</p>
+        </div>
+      </div>
+      <details>
+        <summary>…or paste notes</summary>
+        <input id="pasteName" placeholder="Deck name (e.g. Biology ch.3)">
+        <textarea id="pasteText" rows="6" placeholder="Paste notes here. Examples:&#10;Mitochondria: powerhouse of the cell&#10;Q: Capital of France?&#10;A: Paris&#10;Or plain sentences – I'll turn them into fill-in-the-blank!"></textarea>
+        <button id="pasteBtn">Make deck</button>
+      </details>
+      <details>
+        <summary>What formats work?</summary>
+        <ul class="small">
+          <li><code>term: definition</code>, <code>term - definition</code>, <code>term :: definition</code></li>
+          <li><code>Q: question</code> followed by <code>A: answer</code></li>
+          <li>CSV / TSV with two columns (question, answer)</li>
+          <li>JSON: <code>[{"q":"…","a":"…"}]</code></li>
+          <li>Anything else: sentences become fill-in-the-blank cards</li>
+        </ul>
+        <p class="small">PDFs work too (they need selectable text, not scanned pictures). For Word docs, copy the text and paste it above.</p>
+      </details>
+    </div>
+
+    <div class="card">
+      <h3>2. Pick a deck &amp; battle!</h3>
+      <div class="row wrap">
+        <label>Answer style
+          <select id="mode">
+            <option value="mixed">Mixed</option>
+            <option value="mc">Multiple choice</option>
+            <option value="type">Type the answer</option>
+          </select>
+        </label>
+        <label>Flip cards
+          <select id="flip">
+            <option value="0">Question → Answer</option>
+            <option value="1">Answer → Question</option>
+          </select>
+        </label>
+      </div>
+      <div id="deckList"></div>
+      <p><button id="sampleBtn" class="ghost">Try a sample deck</button></p>
+    </div>
+  </section>
+
+  <!-- WORLD -->
+  <section id="screen-world" class="screen">
+    <div class="worldhud">
+      <span id="wZone" class="pill"></span>
+      <span id="wHearts" class="pill"></span>
+      <span id="wCaught" class="pill"></span>
+      <select id="wDeck" title="Study deck used in battles"></select>
+      <button id="wQuests" class="ghost small-btn" title="Quest log (J)">📜 Quests (0)</button>
+      <button id="wMap" class="ghost small-btn" title="Big map (M)">🗺 Map (M)</button>
+      <button id="wReview" class="ghost small-btn">📝 Review (0)</button>
+    </div>
+    <div id="worldWrap" class="worldwrap">
+      <canvas id="world"></canvas>
+      <div class="mmwrap"><canvas id="minimap" width="128" height="96"></canvas><i id="mmDot"></i></div>
+      <div id="wBanner" class="wbanner"></div>
+      <div id="wToast" class="wtoast"></div>
+      <div id="dialog" class="dialog hidden"></div>
+      <div id="flash" class="flash"></div>
+      <div id="pad" class="pad">
+        <button data-dir="up" class="u">▲</button><button data-dir="left" class="l">◀</button><button data-dir="right" class="r">▶</button><button data-dir="down" class="d">▼</button>
+      </div>
+      <button id="padA" class="padA">A</button>
+      <div id="questModal" class="modal hidden"><div class="card"><h3>📜 Quest log</h3><div id="questList"></div><p id="questDone" class="small"></p><button id="questClose">Back to the world</button></div></div>
+      <div id="bigMap" class="modal bigmap hidden"><div class="bigmapbox"><canvas id="bigMapCv" width="768" height="576"></canvas><div class="maplegend"><span>🔴 You</span><span>🏠 Village</span><span>❗ Quest waiting</span><span>Press <kbd>M</kbd> or Esc to close</span><button id="bigMapClose" class="ghost small-btn">✕ Close</button></div></div></div>
+      <div id="reviewModal" class="modal hidden"><div class="card"><h3>📝 Cards to review</h3><ul id="reviewList" class="missed"></ul><button id="reviewClose">Back to the world</button></div></div>
+    </div>
+    <p class="sub">Arrow keys / WASD to walk · Space to talk or read signs · <b>M</b> map · <b>J</b> quests · Villagers with a yellow <b>!</b> have a quest, and most will battle you · Walk into roaming creatures or through tall grass to start a wild battle.</p>
+  </section>
+
+  <!-- BATTLE -->
+  <section id="screen-battle" class="screen">
+    <div class="hud">
+      <span id="hudCards" class="pill"></span>
+      <span id="hudStreak" class="pill"></span>
+      <span id="hudScore" class="pill"></span>
+      <button id="runBtn" class="ghost small-btn">Run away</button>
+    </div>
+    <div id="field" class="field">
+      <div class="foe-box box"><div><strong id="foeName"></strong> <span id="foeLv" class="pill"></span></div><div class="bar red"><div id="foeHp"></div></div></div>
+      <div id="foeSprite" class="sprite foe"></div>
+      <div id="meSprite" class="sprite me"></div>
+      <div class="me-box box"><div><strong id="meName"></strong> <span id="meLv" class="pill"></span></div><div id="meHearts" class="hearts"></div></div>
+    </div>
+    <div id="msg" class="msg"></div>
+    <div id="qpanel" class="card">
+      <div class="qhead"><div id="qlabel" class="qlabel"></div><button id="badBtn" class="ghost small-btn" title="See where this question came from and fix it">🤔 Doesn't make sense?</button></div>
+      <div id="qtext" class="qtext"></div>
+      <div id="choices" class="choices"></div>
+      <div id="hintText" class="hint hidden"></div>
+      <form id="typeForm" class="typeform" autocomplete="off">
+        <input id="typeInput" placeholder="Type your answer…" autocapitalize="off" spellcheck="false">
+        <button>Attack!</button>
+      </form>
+      <button id="hintBtn" type="button" class="hintbtn" title="Stuck? Get a hint (costs a little XP)">💡 Hint (−3 XP)</button>
+      <div id="hintCost" class="small hidden"></div>
+      <div id="feedback" class="feedback"></div>
+      <button id="nextBtn" class="hidden">Continue ▶</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screen-result" class="screen">
+    <div class="card center">
+      <h2 id="resTitle"></h2>
+      <div id="resSprite" class="sprite small"></div>
+      <p id="resStats"></p>
+      <div id="resCaught" class="row wrap"></div>
+      <div id="resMissed"></div>
+      <div class="row">
+        <button id="againBtn">Play again</button>
+        <button id="resHome" class="ghost">Home</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEX -->
+  <section id="screen-dex" class="screen">
+    <h2>Studydex</h2>
+    <p id="dexCount" class="sub"></p>
+    <div id="dexGrid" class="dex"></div>
+  </section>
+</main>
+
+
+<!-- AI TIDY -->
+<div id="aiModal" class="aimodal hidden">
+  <div class="card">
+    <h3 id="aiTitle">✨ Tidy with AI</h3>
+    <p id="aiDeckName" class="sub"></p>
+    <div id="aiStart">
+      <p class="small">A small AI runs <strong>on your own device</strong> (nothing is uploaded). It checks every card, rewrites the confusing ones and flags the nonsense ones. You approve the changes before anything is saved.</p>
+      <label>AI size
+        <select id="aiModel"></select>
+      </label>
+      <p class="small">The first time, the browser downloads the model once and remembers it. Needs a recent Chrome or Edge on a computer; phones often can't run it.</p>
+      <div class="row wrap"><button id="aiGo">Start</button><button id="aiCancel0" class="ghost">Close</button></div>
+    </div>
+    <div id="aiBusy" class="hidden">
+      <p id="aiStatus"></p>
+      <div class="bar"><div id="aiBar"></div></div>
+      <button id="aiStop" class="ghost">Stop</button>
+    </div>
+    <div id="aiResults" class="hidden">
+      <p id="aiSummary"></p>
+      <div id="aiList" class="ailist"></div>
+      <div class="row wrap"><button id="aiApply">Apply selected</button><button id="aiCancel1" class="ghost">Discard</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- FIX A QUESTION -->
+<div id="fixModal" class="aimodal hidden">
+  <div class="card">
+    <h3>🤔 Fix this question</h3>
+    <label>Question <textarea id="fixQ" rows="3"></textarea></label>
+    <label>Answer <input id="fixA"></label>
+    <div class="row wrap"><button id="fixSave">Save</button><button id="fixCancel" class="ghost">Cancel</button><button id="fixDel" class="ghost">🗑 Delete card</button></div>
+    <h4 class="srchead">Where it came from</h4>
+    <p id="srcNote" class="small"></p>
+    <div id="srcView" class="srcview"></div>
+    <div class="row wrap srcbtns">
+      <button id="srcUp" class="ghost small-btn">▲ Show earlier text</button>
+      <button id="srcDown" class="ghost small-btn">▼ Show later text</button>
+    </div>
+    <form id="srcForm" class="row"><input id="srcFind" placeholder="Search the file…"><button class="ghost">Find</button></form>
+  </div>
+</div>
+
+<!-- TUTORIAL -->
+<div id="tutorial" class="tutorial hidden" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+  <div class="card tutcard">
+    <div id="tutPic" class="tutpic"></div>
+    <h2 id="tutTitle"></h2>
+    <div id="tutBody" class="tutbody"></div>
+    <div id="tutDots" class="tutdots"></div>
+    <div class="row wrap tutbtns">
+      <button id="tutSkip" class="ghost">Skip tutorial</button>
+      <span class="grow"></span>
+      <button id="tutBack" class="ghost">◀ Back</button>
+      <button id="tutNext">Next ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT (bottom right, on every screen) -->
+<div id="chat" class="chat collapsed">
+  <button id="chatTab" class="chattab" title="Open chat">💬 Chat <span id="chatBadge" class="chatbadge hidden">0</span></button>
+  <div class="chatpanel">
+    <div class="chathead">
+      <strong>💬 Global chat</strong>
+      <span id="chatStatus" class="chatstatus">connecting…</span>
+      <button id="chatMin" class="chatmin" title="Minimise">▾</button>
+    </div>
+    <div id="chatLog" class="chatlog" aria-live="polite"></div>
+    <form id="chatForm" class="chatform" autocomplete="off">
+      <input id="chatInput" maxlength="200" placeholder="Say something… (Esc to go back to the game)" autocapitalize="sentences">
+      <button>Send</button>
+    </form>
+    <div class="chatfoot">You are <button id="chatName" class="linkbtn" title="Change your chat name"></button> · be kind, everyone online can read this</div>
+  </div>
+</div>
+
+<script src="creatures.js?v=8"></script>
+<script src="world.js?v=8"></script>
+<script src="quests.js?v=8"></script>
+<script src="parser.js?v=8"></script>
+<script src="ai.js?v=8"></script>
+<script src="app.js?v=8"></script>
+<script src="tutorial.js?v=8"></script>
+<script src="chat.js?v=8"></script>
+</body>
+</html>
