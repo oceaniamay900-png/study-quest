@@ -4,15 +4,6 @@ A study game with collectible, evolving creatures. Load your own notes, answer q
 
 Everything runs in the browser. There is no server, no account and no build step. Your decks and progress are saved in your browser's local storage.
 
-## Put it on GitHub and play it online
-
-1. Create a new repository on GitHub (for example `study-quest`).
-2. Upload all the files in this folder (`index.html`, `style.css`, `app.js`, `creatures.js`, `world.js`, `quests.js`, `tutorial.js`, `chat.js`, `parser.js`, `ai.js`, `pdfjs-lib.js`, `pdfjs-worker.js`, `pdfjs-LICENSE.txt`, the `samples` folder (the `vendor` folder is optional), this README).
-3. Go to **Settings → Pages**. Under **Build and deployment**, choose **Deploy from a branch**, pick `main` and `/ (root)`, and save.
-4. After a minute your game is live at `https://YOUR-USERNAME.github.io/study-quest/`.
-
-You can also just open `index.html` on your computer to play it locally.
-
 ## How to play
 
 1. Choose a starter creature.
